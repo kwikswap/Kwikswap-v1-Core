@@ -26,21 +26,7 @@
 
 pragma solidity =0.6.6;
 
-// a library for performing overflow-safe math, courtesy of DappHub (https://github.com/dapphub/ds-math)
-
-library SafeMath {
-    function add(uint x, uint y) internal pure returns (uint z) {
-        require((z = x + y) >= x, 'ds-math-add-overflow');
-    }
-
-    function sub(uint x, uint y) internal pure returns (uint z) {
-        require((z = x - y) <= x, 'ds-math-sub-underflow');
-    }
-
-    function mul(uint x, uint y) internal pure returns (uint z) {
-        require(y == 0 || (z = x * y) / y == x, 'ds-math-mul-overflow');
-    }
-}
+import "https://github.com/OpenZeppelin/openzeppelin-contracts/blob/v3.4.0/contracts/token/ERC20/SafeERC20.sol";
 
 // File: @kwikswap/lib/contracts/libraries/TransferHelper.sol
 
@@ -72,26 +58,6 @@ library TransferHelper {
     }
 }
 
-
-// File: contracts/interfaces/IERC20.sol
-
-pragma solidity >=0.5.0;
-
-interface IERC20 {
-    event Approval(address indexed owner, address indexed spender, uint value);
-    event Transfer(address indexed from, address indexed to, uint value);
-
-    function name() external view returns (string memory);
-    function symbol() external view returns (string memory);
-    function decimals() external view returns (uint8);
-    function totalSupply() external view returns (uint);
-    function balanceOf(address owner) external view returns (uint);
-    function allowance(address owner, address spender) external view returns (uint);
-
-    function approve(address spender, uint value) external returns (bool);
-    function transfer(address to, uint value) external returns (bool);
-    function transferFrom(address from, address to, uint value) external returns (bool);
-}
 
 // File: contracts/libraries/KwikswapV1Library.sol
 
@@ -368,6 +334,7 @@ pragma solidity =0.6.6;
 contract KwikswapV1Router01 is IKwikswapV1Router01 {
     address public immutable override factory;
     address public immutable override WETH;
+    using SafeERC20 for IERC20;
 
     modifier ensure(uint deadline) {
         require(deadline >= block.timestamp, 'KwikswapV1Router: EXPIRED');
@@ -466,7 +433,7 @@ contract KwikswapV1Router01 is IKwikswapV1Router01 {
         uint deadline
     ) public override ensure(deadline) returns (uint amountA, uint amountB) {
         address pair = KwikswapV1Library.pairFor(factory, tokenA, tokenB);
-        IKwikswapV1Pair(pair).transferFrom(msg.sender, pair, liquidity); // send liquidity to pair
+        IERC20(pair).safeTransferFrom(msg.sender, pair, liquidity); // send liquidity to pair
         (uint amount0, uint amount1) = IKwikswapV1Pair(pair).burn(to);
         (address token0,) = KwikswapV1Library.sortTokens(tokenA, tokenB);
         (amountA, amountB) = tokenA == token0 ? (amount0, amount1) : (amount1, amount0);
